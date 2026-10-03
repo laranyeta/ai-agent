@@ -1,10 +1,11 @@
 import chromadb
+import os
 from dotenv import load_dotenv
 from anthropic import Anthropic
 
 load_dotenv()
 client_claude = Anthropic()
-client_chroma = chromadb.PersistentClient(path="./chroma_db")
+client_chroma = chromadb.HttpClient(host=os.getenv("CHROMA_HOST", "chroma"), port=8000)
 collection = client_chroma.get_or_create_collection(name="my_docs")
 
 def get_context(query: str, n_results: int = 3) -> str:

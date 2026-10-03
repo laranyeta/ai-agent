@@ -1,7 +1,7 @@
 import os
 import chromadb
 
-client = chromadb.PersistentClient(path="./chroma_db")
+client = chromadb.HttpClient(host="localhost", port=8001)
 collection = client.get_or_create_collection(name="my_docs")
 
 def slice(text: str, sz: int = 500) -> list[str]:
