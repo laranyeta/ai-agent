@@ -12,7 +12,7 @@ metadata:
   name: api-secret
 type: Opaque
 stringData:
-  ANTHROPIC_API_KEY: "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"
+  ANTHROPIC_API_KEY: "placeholder"
 
 ---
 apiVersion: apps/v1
