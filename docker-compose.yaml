@@ -1,23 +1,25 @@
-version: '3.8'
-
 services:
-  api:
+  agent:
     build: .
     ports:
       - "8000:8000"
     environment:
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:?set ANTHROPIC_API_KEY in your .env}
+      CHROMA_HOST: chroma
+      CHROMA_PORT: "8000"
+      OFFERS_FILE: /app/docs/jobs.xlsx
     volumes:
-      - ./chroma_db:/app/chroma_db
-    command: python app.py
+      - ./docs:/app/docs:ro
     depends_on:
-      - chroma
+      chroma:
+        condition: service_started
 
   chroma:
-    image: ghcr.io/chroma-core/chroma:latest
-    ports:
-      - "8001:8000"
+    image: chromadb/chroma:latest
     volumes:
-      - ./chroma_data:/chroma/data
-    environment:
-      - IS_PERSISTENT=TRUE
+      - chroma_data:/data
+    expose:
+      - "8000"
+
+volumes:
+  chroma_data:

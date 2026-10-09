@@ -1,12 +1,18 @@
-from dotenv import load_dotenv
+"""Smoke test: check that the Anthropic API key and model are working.
+
+    python main.py
+"""
+
 from anthropic import Anthropic
 
-load_dotenv()
+from config import MODEL
+
 client = Anthropic()
 
-respuesta = client.messages.create(
-    model="claude-haiku-4-5-20251001",
+response = client.messages.create(
+    model=MODEL,
     max_tokens=200,
-    messages=[{"role": "user", "content": "Saluda en una frase."}],
+    messages=[{"role": "user", "content": "Reply with one short sentence to say hello."}],
 )
-print(respuesta.content[0].text)
+
+print(response.content[0].text)

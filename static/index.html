@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Job Hunting AI Agent</title>
+<style>
+  :root {
+    --bg: #fbfaf8;
+    --surface: #ffffff;
+    --border: #e4e0d9;
+    --text: #1f1d1a;
+    --muted: #6b6760;
+    --accent: #b4552d;
+    --accent-soft: #f6ece6;
+    --user-bg: #1f1d1a;
+    --user-text: #fbfaf8;
+    --radius: 14px;
+    --font: ui-sans-serif, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #171614;
+      --surface: #201e1b;
+      --border: #332f2a;
+      --text: #ece8e1;
+      --muted: #9a938a;
+      --accent: #e08b5f;
+      --accent-soft: #2c231d;
+      --user-bg: #ece8e1;
+      --user-text: #171614;
+    }
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body { height: 100%; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 15px;
+    line-height: 1.6;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--surface);
+  }
+
+  .logo {
+    width: 30px; height: 30px;
+    border-radius: 9px;
+    background: var(--accent);
+    color: #fff;
+    display: grid;
+    place-items: center;
+    font-weight: 700;
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+
+  .title { font-weight: 650; letter-spacing: -0.01em; }
+
+  .subtitle {
+    font-size: 12px;
+    color: var(--muted);
+    font-family: var(--mono);
+  }
+
+  .spacer { flex: 1; }
+
+  button.ghost {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+  }
+  button.ghost:hover { color: var(--text); border-color: var(--muted); }
+
+  main {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px 20px 8px;
+  }
+
+  .thread {
+    max-width: 760px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .empty {
+    text-align: center;
+    color: var(--muted);
+    padding: 48px 16px;
+  }
+  .empty h2 {
+    font-size: 19px;
+    color: var(--text);
+    margin: 0 0 8px;
+    font-weight: 650;
+  }
+  .examples {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    margin-top: 22px;
+  }
+  .examples button {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 999px;
+    padding: 7px 15px;
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+  }
+  .examples button:hover { border-color: var(--accent); color: var(--accent); }
+
+  .msg { display: flex; }
+  .msg.user { justify-content: flex-end; }
+
+  .bubble {
+    max-width: 88%;
+    padding: 11px 15px;
+    border-radius: var(--radius);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+  .msg.user .bubble {
+    background: var(--user-bg);
+    color: var(--user-text);
+    border-bottom-right-radius: 5px;
+  }
+  .msg.bot .bubble {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-bottom-left-radius: 5px;
+  }
+  .msg.error .bubble {
+    background: var(--accent-soft);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+  }
+
+  .bubble code {
+    font-family: var(--mono);
+    font-size: 0.88em;
+    background: rgba(128,128,128,0.16);
+    padding: 1px 5px;
+    border-radius: 4px;
+  }
+  .bubble strong { font-weight: 650; }
+
+  .tools {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 7px 0 0 2px;
+  }
+  .tool {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent);
+    background: var(--accent-soft);
+    border-radius: 999px;
+    padding: 2px 9px;
+  }
+
+  .dots { display: inline-flex; gap: 4px; padding: 4px 0; }
+  .dots i {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--muted);
+    animation: blink 1.3s infinite;
+  }
+  .dots i:nth-child(2) { animation-delay: 0.2s; }
+  .dots i:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes blink { 0%, 60%, 100% { opacity: 0.25 } 30% { opacity: 1 } }
+
+  footer {
+    padding: 12px 20px 20px;
+    background: linear-gradient(to top, var(--bg) 72%, transparent);
+  }
+
+  .composer {
+    max-width: 760px;
+    margin: 0 auto;
+    display: flex;
+    gap: 9px;
+    align-items: flex-end;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 9px 9px 9px 15px;
+  }
+  .composer:focus-within { border-color: var(--accent); }
+
+  textarea {
+    flex: 1;
+    border: none;
+    outline: none;
+    resize: none;
+    background: transparent;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 15px;
+    line-height: 1.55;
+    max-height: 180px;
+    padding: 4px 0;
+  }
+
+  .send {
+    width: 34px; height: 34px;
+    flex-shrink: 0;
+    border: none;
+    border-radius: 9px;
+    background: var(--accent);
+    color: #fff;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+  }
+  .send:disabled { opacity: 0.35; cursor: default; }
+
+  .hint {
+    max-width: 760px;
+    margin: 8px auto 0;
+    font-size: 11.5px;
+    color: var(--muted);
+    text-align: center;
+  }
+
+  @media (max-width: 560px) {
+    .bubble { max-width: 95%; }
+    main { padding: 16px 12px 4px; }
+    footer { padding: 8px 12px 14px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">AI</div>
+  <div>
+    <div class="title">Job Hunting Agent</div>
+    <div class="subtitle" id="status">connecting…</div>
+  </div>
+  <div class="spacer"></div>
+  <button class="ghost" id="reset">New chat</button>
+</header>
+
+<main id="main">
+  <div class="thread" id="thread">
+    <div class="empty" id="empty">
+      <h2>Ask about your CV and your saved offers</h2>
+      <p>Your CV is retrieved with RAG. The offers are read through MCP tools.</p>
+      <div class="examples">
+        <button>What offers do I have saved?</button>
+        <button>Which technologies come up most in my offers?</button>
+        <button>Which offer fits my CV best, and why?</button>
+        <button>What skills am I missing for these roles?</button>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="composer">
+    <textarea id="input" rows="1" placeholder="Ask something about your CV or your offers…"></textarea>
+    <button class="send" id="send" aria-label="Send">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="19" x2="12" y2="5"></line>
+        <polyline points="5 12 12 5 19 12"></polyline>
+      </svg>
+    </button>
+  </div>
+  <div class="hint">Enter to send · Shift+Enter for a new line</div>
+</footer>
+
+<script>
+const thread  = document.getElementById('thread');
+const main    = document.getElementById('main');
+const input   = document.getElementById('input');
+const sendBtn = document.getElementById('send');
+const status  = document.getElementById('status');
+const empty   = document.getElementById('empty');
+
+let sessionId = null;
+let busy = false;
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// Minimal, safe formatting: escape first, then allow **bold** and `code`.
+function format(text) {
+  return escapeHtml(text)
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/`([^`]+)`/g, '<code>$1</code>');
+}
+
+function addMessage(role, text, tools) {
+  empty?.remove();
+
+  const row = document.createElement('div');
+  row.className = 'msg ' + role;
+
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+  bubble.innerHTML = format(text);
+  row.appendChild(bubble);
+
+  const wrap = document.createElement('div');
+  wrap.appendChild(row);
+
+  if (tools && tools.length) {
+    const list = document.createElement('div');
+    list.className = 'tools';
+    [...new Set(tools)].forEach(name => {
+      const tag = document.createElement('span');
+      tag.className = 'tool';
+      tag.textContent = name + '()';
+      list.appendChild(tag);
+    });
+    wrap.appendChild(list);
+  }
+
+  thread.appendChild(wrap);
+  main.scrollTop = main.scrollHeight;
+  return wrap;
+}
+
+function addTyping() {
+  empty?.remove();
+  const row = document.createElement('div');
+  row.className = 'msg bot';
+  row.innerHTML = '<div class="bubble"><span class="dots"><i></i><i></i><i></i></span></div>';
+  thread.appendChild(row);
+  main.scrollTop = main.scrollHeight;
+  return row;
+}
+
+async function send() {
+  const message = input.value.trim();
+  if (!message || busy) return;
+
+  busy = true;
+  sendBtn.disabled = true;
+  input.value = '';
+  input.style.height = 'auto';
+
+  addMessage('user', message);
+  const typing = addTyping();
+
+  try {
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message, session_id: sessionId })
+    });
+
+    const data = await res.json();
+    typing.remove();
+
+    if (!res.ok) {
+      addMessage('error', data.detail || 'The request failed.');
+    } else {
+      sessionId = data.session_id;
+      addMessage('bot', data.reply, data.tools_used);
+    }
+  } catch (error) {
+    typing.remove();
+    addMessage('error', 'Could not reach the server: ' + error.message);
+  } finally {
+    busy = false;
+    sendBtn.disabled = false;
+    input.focus();
+  }
+}
+
+sendBtn.addEventListener('click', send);
+
+input.addEventListener('keydown', event => {
+  if (event.key === 'Enter' && !event.shiftKey) {
+    event.preventDefault();
+    send();
+  }
+});
+
+input.addEventListener('input', () => {
+  input.style.height = 'auto';
+  input.style.height = Math.min(input.scrollHeight, 180) + 'px';
+});
+
+document.getElementById('reset').addEventListener('click', async () => {
+  if (sessionId) {
+    await fetch('/api/reset', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_id: sessionId })
+    }).catch(() => {});
+  }
+  sessionId = null;
+  location.reload();
+});
+
+document.addEventListener('click', event => {
+  if (event.target.closest('.examples button')) {
+    input.value = event.target.textContent;
+    send();
+  }
+});
+
+// Show which MCP tools the agent loaded, so the UI reflects the real server.
+fetch('/health')
+  .then(res => res.json())
+  .then(data => {
+    status.textContent = data.tools.length
+      ? data.tools.length + ' MCP tools · RAG ready'
+      : 'no MCP tools loaded';
+  })
+  .catch(() => { status.textContent = 'offline'; });
+
+input.focus();
+</script>
+
+</body>
+</html>
