@@ -1,23 +1,24 @@
-"""Minimal RAG over the indexed CV, with no MCP and no tools.
+"""Minimal RAG over the indexed CV, written as a LangChain chain.
 
-This is the retrieval layer on its own: retrieve, stuff, answer. It is kept
-as a reference and as a quick way to check that indexing and retrieval work
-before bringing the agent and its tools into the picture.
+This is the retrieval layer on its own, with no MCP and no tools: retrieve,
+stuff into a prompt, answer. It is kept as a reference and as a quick way to
+check that indexing and retrieval work before bringing the agent in.
 
     python rag.py
+
+The chain is LangChain Expression Language (LCEL):
+
+    {context: retrieve, question} | prompt | ChatAnthropic | StrOutputParser
 """
 
-from anthropic import Anthropic
+from langchain_anthropic import ChatAnthropic
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.runnables import RunnableLambda, RunnablePassthrough
 
 from config import MAX_TOKENS, MODEL, N_RESULTS, get_collection
 
-client_claude = Anthropic()
 collection = get_collection()
-
-SYSTEM_PROMPT = (
-    "Answer the question using only the context provided. "
-    "If the answer is not in the context, say so instead of guessing."
-)
 
 
 def get_context(query: str, n_results: int = N_RESULTS) -> str:
@@ -30,21 +31,28 @@ def get_context(query: str, n_results: int = N_RESULTS) -> str:
     return "\n\n---\n\n".join(fragments)
 
 
+prompt = ChatPromptTemplate.from_messages(
+    [
+        (
+            "system",
+            "Answer the question using only the context provided. "
+            "If the answer is not in the context, say so instead of guessing.",
+        ),
+        ("human", "Context:\n{context}\n\nQuestion: {question}"),
+    ]
+)
+
+chain = (
+    {"context": RunnableLambda(get_context), "question": RunnablePassthrough()}
+    | prompt
+    | ChatAnthropic(model=MODEL, max_tokens=MAX_TOKENS)
+    | StrOutputParser()
+)
+
+
 def ask(query: str) -> str:
     """Answer one question from the indexed documents."""
-    context = get_context(query)
-    response = client_claude.messages.create(
-        model=MODEL,
-        max_tokens=MAX_TOKENS,
-        system=SYSTEM_PROMPT,
-        messages=[
-            {
-                "role": "user",
-                "content": f"Context:\n{context}\n\nQuestion: {query}",
-            }
-        ],
-    )
-    return response.content[0].text
+    return chain.invoke(query)
 
 
 if __name__ == "__main__":

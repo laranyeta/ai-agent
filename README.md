@@ -4,7 +4,7 @@ A personal assistant that answers questions about my CV and the job offers I am
 tracking. The CV is retrieved with **RAG**; the offers are reached through an
 **MCP server** that the model calls as tools.
 
-Built with the Claude API, ChromaDB, MCP and FastAPI.
+Built with the Claude API, ChromaDB, LlamaIndex, LangChain, MCP and FastAPI.
 
 ---
 
@@ -124,13 +124,13 @@ works unchanged in this agent, in Claude Desktop, or in any other host.
 | File            | Role                                                       |
 | --------------- | ---------------------------------------------------------- |
 | `config.py`     | every path, model name and constant, overridable via env    |
-| `index.py`      | splits documents into overlapping chunks, upserts to Chroma |
+| `index.py`      | LlamaIndex pipeline: load, split into overlapping chunks, store in Chroma |
 | `server.py`     | MCP server over the offers spreadsheet                      |
 | `agent.py`      | RAG retrieval + the Claude tool-calling loop                |
 | `app.py`        | FastAPI: chat API and static interface                      |
 | `chat.py`       | terminal chat                                               |
 | `static/`       | the chat interface (one HTML file, no build step)           |
-| `rag.py`        | retrieval-only baseline, kept for comparison                |
+| `rag.py`        | retrieval-only baseline as a LangChain (LCEL) chain         |
 | `api_script.py` | REST consumption example with retries and backoff           |
 | `main.py`       | smoke test for the API key and model                        |
 
@@ -141,8 +141,8 @@ Everything in `.env` (see `.env.example`). The ones worth knowing:
 | Variable        | Default            | Notes                                         |
 | --------------- | ------------------ | --------------------------------------------- |
 | `MODEL`         | `claude-haiku-5-5` | any Claude model id                           |
-| `CHUNK_SIZE`    | `250`              | words per chunk                               |
-| `CHUNK_OVERLAP` | `50`               | words shared between consecutive chunks       |
+| `CHUNK_SIZE`    | `250`              | tokens per chunk                              |
+| `CHUNK_OVERLAP` | `50`               | tokens shared between consecutive chunks      |
 | `N_RESULTS`     | `3`                | CV chunks retrieved per question               |
 | `CHROMA_HOST`   | unset              | set it to use a Chroma server instead of disk |
 
@@ -150,6 +150,9 @@ Everything in `.env` (see `.env.example`). The ones worth knowing:
 
 - **Chunk overlap.** A CV bullet that straddles a chunk boundary would be
   unretrievable without it, and a single bullet often carries the whole answer.
+- **LlamaIndex and embeddings.** `index.py` wraps Chroma's default embedding
+  function as a LlamaIndex embed model, so documents and the agent's queries
+  share one vector space. Chunk ids are stable, so re-indexing overwrites.
 - **Embeddings.** Chroma's default model, which is enough for a handful of
   short documents. A larger corpus would want an explicit model and reranking.
 - **Tools over context stuffing.** See the architecture note above.

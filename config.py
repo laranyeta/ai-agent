@@ -31,8 +31,8 @@ CHROMA_PORT = int(os.getenv("CHROMA_PORT", "8000"))
 
 # --- Retrieval -------------------------------------------------------------
 
-CHUNK_SIZE = int(os.getenv("CHUNK_SIZE", "250"))  # words per chunk
-CHUNK_OVERLAP = int(os.getenv("CHUNK_OVERLAP", "50"))  # words shared between chunks
+CHUNK_SIZE = int(os.getenv("CHUNK_SIZE", "250"))  # tokens per chunk
+CHUNK_OVERLAP = int(os.getenv("CHUNK_OVERLAP", "50"))  # tokens shared between chunks
 N_RESULTS = int(os.getenv("N_RESULTS", "3"))  # chunks retrieved per query
 
 # --- Model ---------------------------------------------------------------
